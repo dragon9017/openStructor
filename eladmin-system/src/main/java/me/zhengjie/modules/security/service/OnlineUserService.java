@@ -154,10 +154,15 @@ public class OnlineUserService {
      * @param userName 用户名
      */
     public void checkLoginOnUser(String userName, String igoreToken){
+//        通过浏览器以及ip 地址确认异地登陆的用户
+//        在线用户的数据从Redis中获取
         List<OnlineUserDto> onlineUserDtos = getAll(userName);
+//        没有异地登陆的用户
         if(onlineUserDtos ==null || onlineUserDtos.isEmpty()){
             return;
         }
+//        存在异地登陆的用户
+//        踢出用户也就是将用户的Token 从Redis中删除
         for(OnlineUserDto onlineUserDto : onlineUserDtos){
             if(onlineUserDto.getUserName().equals(userName)){
                 try {

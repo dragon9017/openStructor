@@ -81,20 +81,24 @@ public class AuthorizationController {
         String code = (String) redisUtils.get(authUser.getUuid());
         // 清除验证码
         redisUtils.del(authUser.getUuid());
+//        如果验证码不存在，就是用户没有输入验证码
         if (StringUtils.isBlank(code)) {
             throw new BadRequestException("验证码不存在或已过期");
         }
+//        验证码输入错误
         if (StringUtils.isBlank(authUser.getCode()) || !authUser.getCode().equalsIgnoreCase(code)) {
             throw new BadRequestException("验证码错误");
         }
+//        根据用户名密码生成token
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(authUser.getUsername(), password);
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
         SecurityContextHolder.getContext().setAuthentication(authentication);
         // 生成令牌
         String token = tokenProvider.createToken(authentication);
+//        这是封装类，里面包含user对象等其他数据
         final JwtUserDto jwtUserDto = (JwtUserDto) authentication.getPrincipal();
-        // 保存在线信息
+        // 保存在线信息,在线信息存储在Redis中
         onlineUserService.save(jwtUserDto, token, request);
         // 返回 token 与 用户信息
         Map<String, Object> authInfo = new HashMap<String, Object>(2) {{
@@ -103,6 +107,7 @@ public class AuthorizationController {
         }};
         if (loginProperties.isSingleLogin()) {
             //踢掉之前已经登录的token
+//            一个账号不能同时在不同的地方登陆
             onlineUserService.checkLoginOnUser(authUser.getUsername(), token);
         }
         return ResponseEntity.ok(authInfo);
@@ -118,7 +123,9 @@ public class AuthorizationController {
     @AnonymousGetMapping(value = "/code")
     public ResponseEntity<Object> getCode() {
         // 获取运算的结果
+//        新建一个验证码
         Captcha captcha = loginProperties.getCaptcha();
+//        获得全新的UUID
         String uuid = properties.getCodeKey() + IdUtil.simpleUUID();
         //当验证码类型为 arithmetic时且长度 >= 2 时，captcha.text()的结果有几率为浮点型
         String captchaValue = captcha.text();
@@ -129,6 +136,7 @@ public class AuthorizationController {
         redisUtils.set(uuid, captchaValue, loginProperties.getLoginCode().getExpiration(), TimeUnit.MINUTES);
         // 验证码信息
         Map<String, Object> imgResult = new HashMap<String, Object>(2) {{
+//            将验证码转换为64位就是一张图片
             put("img", captcha.toBase64());
             put("uuid", uuid);
         }};

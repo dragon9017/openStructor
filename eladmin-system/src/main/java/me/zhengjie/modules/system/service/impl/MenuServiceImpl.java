@@ -236,11 +236,14 @@ public class MenuServiceImpl implements MenuService {
         List<MenuDto> trees = new ArrayList<>();
         Set<Long> ids = new HashSet<>();
         for (MenuDto menuDTO : menuDtos) {
+//            获取菜单的父类id，菜单没有父菜单，说明是最顶层菜单
             if (menuDTO.getPid() == null) {
                 trees.add(menuDTO);
             }
             for (MenuDto it : menuDtos) {
+//                menuDTO.getId(): 父亲，it.getPid() ：儿子的父亲
                 if (menuDTO.getId().equals(it.getPid())) {
+//                    如果当前菜单没有子组件，
                     if (menuDTO.getChildren() == null) {
                         menuDTO.setChildren(new ArrayList<>());
                     }
@@ -259,12 +262,15 @@ public class MenuServiceImpl implements MenuService {
     public List<MenuVo> buildMenus(List<MenuDto> menuDtos) {
         List<MenuVo> list = new LinkedList<>();
         menuDtos.forEach(menuDTO -> {
+//            遍历菜单树，如果菜单不为空
                     if (menuDTO!=null){
                         List<MenuDto> menuDtoList = menuDTO.getChildren();
                         MenuVo menuVo = new MenuVo();
                         menuVo.setName(ObjectUtil.isNotEmpty(menuDTO.getComponentName())  ? menuDTO.getComponentName() : menuDTO.getTitle());
                         // 一级目录需要加斜杠，不然会报警告
+//                        如果当前菜单存在父菜单，那么拼接的路径为    父路径/当前路径
                         menuVo.setPath(menuDTO.getPid() == null ? "/" + menuDTO.getPath() :menuDTO.getPath());
+//                        子菜单需要隐藏
                         menuVo.setHidden(menuDTO.getHidden());
                         // 如果不是外链
                         if(!menuDTO.getIFrame()){

@@ -72,10 +72,17 @@ public class LocalStorageServiceImpl implements LocalStorageService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public LocalStorage create(String name, MultipartFile multipartFile) {
+//        判断文件大小
         FileUtil.checkSize(properties.getMaxSize(), multipartFile.getSize());
+//        文件后缀
         String suffix = FileUtil.getExtensionName(multipartFile.getOriginalFilename());
+//        文件类型
         String type = FileUtil.getFileType(suffix);
+//        文件地址（默认为当前系统的c盘根目录下）
+        String filePath=properties.getPath().getPath() + type +  File.separator;
+//        文件上传
         File file = FileUtil.upload(multipartFile, properties.getPath().getPath() + type +  File.separator);
+
         if(ObjectUtil.isNull(file)){
             throw new BadRequestException("上传失败");
         }
@@ -89,6 +96,7 @@ public class LocalStorageServiceImpl implements LocalStorageService {
                     type,
                     FileUtil.getSize(multipartFile.getSize())
             );
+
             return localStorageRepository.save(localStorage);
         }catch (Exception e){
             FileUtil.del(file);
